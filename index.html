@@ -1,0 +1,615 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selamat Ulang Tahun ke-18, Raisha! 🎂✨</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Quicksand & Playfair Display -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Quicksand', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        softPink: '#FFD1DC',
+                        deepPink: '#FF8DA1',
+                        softBlue: '#D4EBF2',
+                        deepBlue: '#7EB6D9',
+                        cream: '#FFF9FB'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #FFD1DC 0%, #E8F4F8 50%, #D4EBF2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(110vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-20vh) rotate(20deg);
+                opacity: 0;
+            }
+        }
+
+        .floating-balloon {
+            position: fixed;
+            bottom: -100px;
+            z-index: 40;
+            pointer-events: none;
+            animation: floatUp linear forwards;
+        }
+
+        @keyframes gentleBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-bounce-slow {
+            animation: gentleBounce 3s ease-in-out infinite;
+        }
+
+        .pop-balloon {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            cursor: pointer;
+        }
+        .pop-balloon:hover {
+            transform: scale(1.1) rotate(-5deg);
+        }
+        .pop-balloon.popped {
+            transform: scale(1.5);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .cake-left, .cake-right {
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .cake-cut .cake-left {
+            transform: translateX(-22px) rotate(-6deg);
+        }
+        .cake-cut .cake-right {
+            transform: translateX(22px) rotate(6deg);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.95);
+            box-shadow: 0 15px 35px rgba(255, 141, 161, 0.18), 0 5px 15px rgba(126, 182, 217, 0.18);
+        }
+
+        .step-section {
+            display: none;
+            animation: fadeInScale 0.6s ease forwards;
+        }
+        .step-section.active {
+            display: flex;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="font-sans text-slate-700 flex flex-col items-center justify-center p-4 relative">
+
+    <!-- Container untuk animasi balon terbang -->
+    <div id="balloon-container" class="fixed inset-0 pointer-events-none z-40 overflow-hidden"></div>
+
+    <!-- Pemutar Musik Audio Lokal (lagu.mp3) & Cadangan YouTube -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="./lagu.mp3" type="audio/mpeg">
+        <source src="./Lagu.mp3" type="audio/mpeg">
+        <source src="./LAGU.MP3" type="audio/mpeg">
+    </audio>
+
+    <!-- Badge Musik Mini di Pojok Kanan Bawah -->
+    <div id="music-badge" onclick="toggleMusic()" class="fixed bottom-4 right-4 z-50 flex items-center gap-2.5 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-full shadow-lg border border-pink-200 cursor-pointer transition-all opacity-0 pointer-events-none hover:scale-105">
+        <div id="music-dot" class="w-2.5 h-2.5 rounded-full bg-pink-500 animate-ping"></div>
+        <span class="text-[11px] font-bold text-pink-600">Semua Aku Dirayakan - Nadin Amizah</span>
+        <i id="music-icon" class="fas fa-pause text-xs text-pink-500 ml-1"></i>
+    </div>
+    <div id="yt-fallback" class="fixed bottom-16 right-4 z-50 rounded-xl overflow-hidden shadow-lg border border-pink-200 hidden"></div>
+
+    <!-- ========================================== -->
+    <!-- TAHAP 1: TOMBOL MULAI & NYALAKAN LAGU      -->
+    <!-- ========================================== -->
+    <section id="step-1" class="step-section active flex-col items-center text-center max-w-md w-full glass-card rounded-3xl p-8">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-pink-300 to-sky-300 flex items-center justify-center mb-5 shadow-inner animate-bounce-slow">
+            <i class="fas fa-music text-3xl text-white"></i>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-pink-100 text-pink-600 text-xs font-bold tracking-wider uppercase mb-3">Special For You</span>
+        <h1 class="font-serif text-3xl font-bold text-slate-800 mb-2">Hai, Raisha Sayang 🌸</h1>
+        <p class="text-sm text-slate-600 mb-7 leading-relaxed">
+            Ada kejutan kecil untuk hari spesialmu yang ke-18. Sebelum mulai, pencet tombol di bawah ini dulu ya biar suasananya makin hangat~
+        </p>
+        <button onclick="startCelebration()" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-pink-400 via-pink-400 to-sky-400 hover:from-pink-500 hover:to-sky-500 text-white font-bold text-base shadow-lg shadow-pink-200 transform transition active:scale-95 flex items-center justify-center gap-3">
+            <i class="fas fa-play-circle text-xl"></i>
+            <span>Putar Lagu & Mulai Kejutan 🎶</span>
+        </button>
+        <p class="text-[11px] text-slate-400 mt-3 italic">♪ Nadin Amizah - Semua Aku Dirayakan</p>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAHAP 2: PECAHKAN 3 BALON DULU             -->
+    <!-- ========================================== -->
+    <section id="step-2" class="step-section flex-col items-center text-center max-w-md w-full glass-card rounded-3xl p-8">
+        <span class="px-3 py-1 rounded-full bg-sky-100 text-sky-600 text-xs font-bold mb-2">Misi Kecil ✨</span>
+        <h2 class="font-serif text-2xl font-bold text-slate-800 mb-2">Pecahkan 3 Balon Ini Dulu!</h2>
+        <p class="text-sm text-slate-500 mb-8">Sentuh atau klik ketiga balon di bawah ini untuk membuka ucapan spesialnya 🎈</p>
+
+        <div class="flex justify-center items-center gap-6 my-4 h-36">
+            <div onclick="popBalloon(this)" class="pop-balloon flex flex-col items-center">
+                <svg class="w-20 h-24 drop-shadow-md" viewBox="0 0 100 120">
+                    <ellipse cx="50" cy="45" rx="35" ry="42" fill="#FF8DA1"/>
+                    <ellipse cx="38" cy="30" rx="8" ry="14" fill="#FFC2CD" transform="rotate(-20 38 30)"/>
+                    <polygon points="45,87 55,87 50,94" fill="#FF8DA1"/>
+                    <path d="M50,94 Q45,105 52,118" stroke="#94a3b8" stroke-width="2" fill="none"/>
+                </svg>
+            </div>
+            <div onclick="popBalloon(this)" class="pop-balloon flex flex-col items-center -mt-6">
+                <svg class="w-20 h-24 drop-shadow-md" viewBox="0 0 100 120">
+                    <ellipse cx="50" cy="45" rx="35" ry="42" fill="#7EB6D9"/>
+                    <ellipse cx="38" cy="30" rx="8" ry="14" fill="#BCE0F5" transform="rotate(-20 38 30)"/>
+                    <polygon points="45,87 55,87 50,94" fill="#7EB6D9"/>
+                    <path d="M50,94 Q55,105 48,118" stroke="#94a3b8" stroke-width="2" fill="none"/>
+                </svg>
+            </div>
+            <div onclick="popBalloon(this)" class="pop-balloon flex flex-col items-center">
+                <svg class="w-20 h-24 drop-shadow-md" viewBox="0 0 100 120">
+                    <ellipse cx="50" cy="45" rx="35" ry="42" fill="#F4A261"/>
+                    <ellipse cx="38" cy="30" rx="8" ry="14" fill="#FAD0AE" transform="rotate(-20 38 30)"/>
+                    <polygon points="45,87 55,87 50,94" fill="#F4A261"/>
+                    <path d="M50,94 Q45,105 52,118" stroke="#94a3b8" stroke-width="2" fill="none"/>
+                </svg>
+            </div>
+        </div>
+
+        <p id="balloon-counter" class="text-xs font-bold text-pink-500 mt-4">Tersisa 3 balon lagi...</p>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAHAP 3: HAPPY BIRTHDAY & POTONG KUE       -->
+    <!-- ========================================== -->
+    <section id="step-3" class="step-section flex-col items-center text-center max-w-md w-full glass-card rounded-3xl p-8">
+        <div class="inline-block px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-200 to-sky-200 text-slate-700 text-xs font-bold mb-3">
+            🎉 Level 18 Unlocked! 🎉
+        </div>
+        <h1 class="font-serif text-4xl font-bold bg-gradient-to-r from-pink-500 to-sky-500 bg-clip-text text-transparent mb-2">
+            Happy Birthday!
+        </h1>
+        <p class="text-base font-semibold text-slate-700 mb-1">Selamat Ulang Tahun ke-18, Raisha! 🤍</p>
+        <p class="text-xs text-slate-500 mb-6">Make a wish dulu dalam hati, lalu klik tombol di bawah untuk potong kuenya ya!</p>
+
+        <div id="cake-wrapper" class="relative my-4 cursor-pointer" onclick="cutTheCake()">
+            <svg class="w-56 h-48 mx-auto drop-shadow-lg" viewBox="0 0 220 190">
+                <ellipse cx="110" cy="170" rx="95" ry="14" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="2"/>
+                <g class="cake-left">
+                    <path d="M40,115 L110,115 L110,165 L40,165 Z" fill="#FFB3C6"/>
+                    <path d="M40,138 L110,138 L110,145 L40,145 Z" fill="#FFF"/>
+                    <path d="M50,75 L110,75 L110,115 L50,115 Z" fill="#BDE0FE"/>
+                    <path d="M48,75 Q55,90 62,78 Q70,92 78,78 Q86,90 95,78 Q102,88 110,78 L110,72 L48,72 Z" fill="#FFFFFF"/>
+                    <rect x="85" y="42" width="8" height="30" rx="3" fill="#FF8DA1"/>
+                    <path d="M89,26 Q94,35 89,40 Q84,35 89,26 Z" fill="#FBBF24" class="animate-pulse"/>
+                </g>
+                <g class="cake-right">
+                    <path d="M110,115 L180,115 L180,165 L110,165 Z" fill="#FF9EB5"/>
+                    <path d="M110,138 L180,138 L180,145 L110,145 Z" fill="#FFF"/>
+                    <path d="M110,75 L170,75 L170,115 L110,115 Z" fill="#A2D2FF"/>
+                    <path d="M110,78 Q118,90 126,78 Q134,92 142,78 Q150,90 158,78 Q165,88 172,75 L172,72 L110,72 Z" fill="#FFFFFF"/>
+                    <rect x="125" y="42" width="8" height="30" rx="3" fill="#7EB6D9"/>
+                    <path d="M129,26 Q134,35 129,40 Q124,35 129,26 Z" fill="#FBBF24" class="animate-pulse"/>
+                </g>
+            </svg>
+        </div>
+
+        <button id="cut-cake-btn" onclick="cutTheCake()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-sky-400 to-pink-400 hover:from-sky-500 hover:to-pink-500 text-white font-bold shadow-md transition flex items-center justify-center gap-2">
+            <i class="fas fa-utensils"></i>
+            <span>Potong Kuenya Sekarang 🍰</span>
+        </button>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAHAP 4: UCAPAN & DOA DARI SASUKE          -->
+    <!-- ========================================== -->
+    <section id="step-4" class="step-section flex-col items-center text-center max-w-md w-full glass-card rounded-3xl p-6 sm:p-8">
+        <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold mb-2">Special Guest from Konoha 🌀</span>
+        <h2 class="font-serif text-2xl font-bold text-slate-800 mb-1">Ucapan dari Sasuke Uchiha</h2>
+        <p class="text-xs text-slate-500 mb-4">Katanya Sasuke jauh-jauh datang buat ngucapin & doain kamu nih!</p>
+
+        <div class="w-full bg-white/80 rounded-2xl p-4 border border-blue-100 shadow-sm mb-4">
+            <div class="relative w-full h-64 rounded-xl overflow-hidden bg-slate-100 mb-3 flex items-center justify-center">
+                <img id="sasuke-img" src="./sasuke1.jpg" data-base="sasuke1" onerror="tryNextExtension(this)" alt="Sasuke Birthday" class="w-full h-full object-contain">
+                <span id="sasuke-badge" class="absolute top-2 left-2 bg-slate-900/70 text-white text-[10px] px-2.5 py-1 rounded-full font-semibold">1 / 3</span>
+            </div>
+            <p id="sasuke-quote" class="text-sm font-medium text-slate-700 italic leading-relaxed min-h-[60px] flex items-center justify-center">
+                "Hmph. Selamat ulang tahun yang ke-18, Raisha. Tetaplah jadi perempuan yang kuat dan keren, jangan mudah menyerah."
+            </p>
+            
+            <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-100">
+                <button onclick="prevSasuke()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition">
+                    <i class="fas fa-chevron-left mr-1"></i> Sebelumnya
+                </button>
+                <div class="flex gap-1.5" id="sasuke-dots">
+                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                </div>
+                <button onclick="nextSasuke()" class="px-3 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-700 text-xs font-bold transition">
+                    Selanjutnya <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <button onclick="goToStep(5)" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-pink-400 to-sky-400 text-white font-bold shadow-md hover:opacity-95 transition">
+            Lanjut ke Halaman Berikutnya ✨ <i class="fas fa-arrow-right ml-1"></i>
+        </button>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAHAP 5: FOTO RAISHA & PUJIAN PUITIS       -->
+    <!-- ========================================== -->
+    <section id="step-5" class="step-section flex-col items-center text-center max-w-md w-full glass-card rounded-3xl p-6 sm:p-8">
+        <span class="px-3 py-1 rounded-full bg-pink-100 text-pink-600 text-xs font-bold mb-2">The Prettiest Girl 🌷</span>
+        <h2 class="font-serif text-2xl font-bold text-slate-800 mb-3">Tentang Cantiknya Kamu</h2>
+
+        <div class="w-full bg-gradient-to-b from-pink-50/90 to-sky-50/90 rounded-2xl p-4 border border-pink-200 shadow-sm mb-5">
+            <div class="relative w-full h-72 rounded-xl overflow-hidden bg-white mb-4 shadow-inner">
+                <img id="raisha-img" src="./raisha1.jpg" data-base="raisha1" onerror="tryNextExtension(this)" alt="Raisha Cantik" class="w-full h-full object-cover">
+                <span id="raisha-badge" class="absolute top-2 right-2 bg-pink-500/80 text-white text-[10px] px-2.5 py-1 rounded-full font-bold">Slide 1 / 2</span>
+            </div>
+
+            <p id="raisha-poem" class="font-serif italic text-sm sm:text-base text-slate-700 leading-relaxed px-2">
+                "Lihatlah senyummu di sini... seindah senja yang paling tenang dan sehangat cahaya pagi. Jangan pernah ragu pada dirimu sendiri ya, Sayang. Kamu punya pesona yang tidak dimiliki siapa pun, dan di mataku, kamu selalu menjadi definisi paling sempurna dari kata cantik."
+            </p>
+
+            <div class="flex justify-center gap-3 mt-4">
+                <button onclick="setRaishaSlide(0)" id="r-btn-0" class="px-4 py-1.5 rounded-full bg-pink-400 text-white text-xs font-bold shadow-sm transition">
+                    Foto 1 ✨
+                </button>
+                <button onclick="setRaishaSlide(1)" id="r-btn-1" class="px-4 py-1.5 rounded-full bg-white text-pink-500 border border-pink-200 text-xs font-bold transition">
+                    Foto 2 ☀️
+                </button>
+            </div>
+        </div>
+
+        <button onclick="goToStep(6)" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-sky-400 to-pink-400 text-white font-bold shadow-md hover:opacity-95 transition">
+            Lihat Fotbar Kita 🤍 <i class="fas fa-heart ml-1"></i>
+        </button>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAHAP 6: FOTBAR KITA & PESAN HARU          -->
+    <!-- ========================================== -->
+    <section id="step-6" class="step-section flex-col items-center text-center max-w-md w-full glass-card rounded-3xl p-6 sm:p-8">
+        <span class="px-3 py-1 rounded-full bg-purple-100 text-purple-600 text-xs font-bold mb-2">Our Memories 📸</span>
+        <h2 class="font-serif text-2xl font-bold text-slate-800 mb-3">Kita Bersama 🤍</h2>
+
+        <div class="w-full rounded-2xl overflow-hidden border-4 border-white shadow-md mb-5 bg-slate-100">
+            <img id="fotbar-img" src="./fotbar.jpg" data-base="fotbar" onerror="tryNextExtension(this)" alt="Fotbar Kita" class="w-full max-h-80 object-cover">
+        </div>
+
+        <div class="bg-white/90 rounded-2xl p-5 border border-pink-200 shadow-inner mb-6 text-left relative">
+            <i class="fas fa-quote-left text-pink-200 text-2xl absolute top-3 left-3"></i>
+            <p class="text-sm text-slate-700 leading-relaxed font-medium relative z-10 pt-2">
+                "Raisha sayang, aku sayangg kamu selalu, kalau cape pulang ke aku, aku selalu disini buat mu, selamat bertambah usia, selalu diberi kemudahan, makasih sudah hadir dan bertahan dihidup ini meski kadang ga gampang, aku bangga sama kamu, love u, berbahagialah."
+            </p>
+        </div>
+
+        <button onclick="finishCelebration()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-pink-400 to-sky-400 text-white font-bold shadow-md hover:opacity-95 transition">
+            Lanjut ke Kejutan Terakhir ✨
+        </button>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAHAP 7: FINALE - BALON & "LOPYU LAH"      -->
+    <!-- ========================================== -->
+    <section id="step-7" class="step-section flex-col items-center text-center max-w-md w-full glass-card rounded-3xl p-6 sm:p-8">
+        <span class="px-3 py-1 rounded-full bg-pink-100 text-pink-600 text-xs font-bold mb-3">Happy 18th Birthday! 🎈✨</span>
+        
+        <div class="w-full rounded-2xl overflow-hidden border-4 border-white shadow-xl mb-5 bg-slate-100 transform hover:scale-[1.02] transition">
+            <img id="last-img" src="./last.jpg" data-base="last" onerror="tryNextExtension(this)" alt="Lopyu Lah" class="w-full max-h-80 object-cover">
+        </div>
+
+        <h1 class="font-serif text-4xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-sky-500 bg-clip-text text-transparent mb-2 animate-bounce-slow">
+            "lopyu lah" ❤️
+        </h1>
+        <p class="text-xs text-slate-500 mb-5">Sekali lagi selamat ulang tahun ke-18, Raisha sayang!</p>
+
+        <button onclick="spawnManyBalloons(25); triggerConfetti();" class="px-5 py-2.5 rounded-full bg-white border border-pink-200 text-pink-500 text-xs font-bold shadow-sm hover:bg-pink-50 transition">
+            Terbangkan Balon Lagi 🎈
+        </button>
+    </section>
+
+    <!-- Custom Toast Notification -->
+    <div id="toast-box" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-xs font-semibold px-5 py-3 rounded-full shadow-xl opacity-0 pointer-events-none transition-opacity duration-300">
+        Notifikasi
+    </div>
+
+    <script>
+        // ==========================================
+        // HELPER OTOMATIS DETEKSI EKSTENSI FOTO DI GITHUB
+        // ==========================================
+        const extCandidates = ['.JPG', '.jpeg', '.JPEG', '.png', '.PNG'];
+        function tryNextExtension(imgEl) {
+            const baseName = imgEl.getAttribute('data-base');
+            if (!baseName) return;
+            let attempt = parseInt(imgEl.getAttribute('data-attempt') || '0', 10);
+            if (attempt < extCandidates.length) {
+                imgEl.setAttribute('data-attempt', attempt + 1);
+                imgEl.src = './' + baseName + extCandidates[attempt];
+            } else {
+                imgEl.onerror = null;
+                imgEl.src = `https://placehold.co/400x400/FFD1DC/334155?text=${baseName}`;
+            }
+        }
+
+        function setSmartImage(imgEl, baseName) {
+            imgEl.setAttribute('data-base', baseName);
+            imgEl.setAttribute('data-attempt', '0');
+            imgEl.onerror = function() { tryNextExtension(this); };
+            imgEl.src = './' + baseName + '.jpg';
+        }
+
+        // ==========================================
+        // STATE & DATA SLIDE
+        // ==========================================
+        let poppedCount = 0;
+        let cakeAlreadyCut = false;
+        let currentSasukeIdx = 0;
+
+        const sasukeSlides = [
+            {
+                base: 'sasuke1',
+                quote: '"Hmph. Selamat ulang tahun yang ke-18, Raisha. Tetaplah jadi perempuan yang kuat dan keren, jangan mudah menyerah."'
+            },
+            {
+                base: 'sasuke2',
+                quote: '"Meskipun aku jarang bicara banyak, di hari spesialmu ini aku ikut merayakan. Semoga semua impianmu di usia 18 tahun tercapai."'
+            },
+            {
+                base: 'sasuke3',
+                quote: '"Bunga ini untukmu. Selalu sehat, bahagia, dan jaga dirimu baik-baik. Selamat ulang tahun, Raisha."'
+            }
+        ];
+
+        const raishaSlides = [
+            {
+                base: 'raisha1',
+                poem: '"Lihatlah senyummu di sini... seindah senja yang paling tenang dan sehangat cahaya pagi. Jangan pernah ragu pada dirimu sendiri ya, Sayang. Kamu punya pesona yang tidak dimiliki siapa pun, dan di mataku, kamu selalu menjadi definisi paling sempurna dari kata cantik."'
+            },
+            {
+                base: 'raisha2',
+                poem: '"Di bawah cahaya matahari sore ini, kamu bersinar jauh lebih terang dari mentari itu sendiri. Berjalanlah dengan penuh percaya diri, Raisha. Dunia ini beruntung punya kamu, dan aku jauh lebih beruntung bisa memilikimu."'
+            }
+        ];
+
+        // ==========================================
+        // 1. NAVIGASI ANTAR TAHAP
+        // ==========================================
+        function goToStep(stepNumber) {
+            document.querySelectorAll('.step-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            const target = document.getElementById('step-' + stepNumber);
+            if (target) {
+                target.classList.add('active');
+            }
+        }
+
+        // ==========================================
+        // 2. PEMUTAR LAGU & MULAI KEJUTAN
+        // ==========================================
+        function startCelebration() {
+            const bgMusic = document.getElementById('bg-music');
+            const badge = document.getElementById('music-badge');
+            const ytFallback = document.getElementById('yt-fallback');
+
+            bgMusic.volume = 0.9;
+            const playPromise = bgMusic.play();
+
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    badge.classList.remove('opacity-0', 'pointer-events-none');
+                    badge.classList.add('opacity-100');
+                }).catch(() => {
+                    // Jika lagu.mp3 belum ada di GitHub, putar via YouTube mini
+                    ytFallback.classList.remove('hidden');
+                    ytFallback.innerHTML = `<iframe width="200" height="113" src="https://www.youtube.com/embed/5UihqGaL5nM?autoplay=1&loop=1&playlist=5UihqGaL5nM&playsinline=1" title="Nadin Amizah - Semua Aku Dirayakan" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                });
+            }
+
+            spawnManyBalloons(22);
+            goToStep(2);
+        }
+
+        function toggleMusic() {
+            const bgMusic = document.getElementById('bg-music');
+            const icon = document.getElementById('music-icon');
+            const dot = document.getElementById('music-dot');
+            if (bgMusic.paused) {
+                bgMusic.play();
+                icon.className = 'fas fa-pause text-xs text-pink-500 ml-1';
+                dot.classList.add('animate-ping');
+            } else {
+                bgMusic.pause();
+                icon.className = 'fas fa-play text-xs text-pink-500 ml-1';
+                dot.classList.remove('animate-ping');
+            }
+        }
+
+        // ==========================================
+        // 3. ANIMASI BALON TERBANG & INTERAKSI POP
+        // ==========================================
+        function spawnManyBalloons(count) {
+            const container = document.getElementById('balloon-container');
+            const colors = ['#FF8DA1', '#7EB6D9', '#FFB3C6', '#A2D2FF', '#F4A261', '#CDB4DB'];
+
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const balloon = document.createElement('div');
+                    balloon.className = 'floating-balloon';
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    const left = Math.random() * 92;
+                    const duration = 4 + Math.random() * 4;
+                    const size = 38 + Math.random() * 25;
+
+                    balloon.style.left = left + 'vw';
+                    balloon.style.animationDuration = duration + 's';
+                    balloon.innerHTML = `
+                        <svg width="${size}" height="${size * 1.25}" viewBox="0 0 100 125">
+                            <ellipse cx="50" cy="45" rx="35" ry="42" fill="${color}" opacity="0.9"/>
+                            <ellipse cx="38" cy="30" rx="7" ry="12" fill="#FFFFFF" opacity="0.4" transform="rotate(-20 38 30)"/>
+                            <polygon points="45,87 55,87 50,94" fill="${color}"/>
+                            <path d="M50,94 Q45,108 52,122" stroke="#94a3b8" stroke-width="2" fill="none"/>
+                        </svg>
+                    `;
+                    container.appendChild(balloon);
+                    setTimeout(() => balloon.remove(), duration * 1000);
+                }, i * 160);
+            }
+        }
+
+        function popBalloon(el) {
+            if (el.classList.contains('popped')) return;
+            el.classList.add('popped');
+            poppedCount++;
+
+            const remaining = 3 - poppedCount;
+            const counterText = document.getElementById('balloon-counter');
+
+            if (remaining > 0) {
+                counterText.textContent = `Tersisa ${remaining} balon lagi...`;
+            } else {
+                counterText.textContent = 'Yeay! Semua balon pecah! 🎉';
+                triggerConfetti();
+                setTimeout(() => {
+                    goToStep(3);
+                }, 750);
+            }
+        }
+
+        // ==========================================
+        // 4. POTONG KUE ULANG TAHUN
+        // ==========================================
+        function cutTheCake() {
+            if (cakeAlreadyCut) return;
+            cakeAlreadyCut = true;
+
+            const wrapper = document.getElementById('cake-wrapper');
+            const btn = document.getElementById('cut-cake-btn');
+            wrapper.classList.add('cake-cut');
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Yeay! Kuenya Sudah Dipotong! 🎂</span>';
+            btn.classList.replace('from-sky-400', 'from-emerald-400');
+            btn.classList.replace('to-pink-400', 'to-teal-400');
+
+            triggerConfetti();
+            spawnManyBalloons(15);
+
+            setTimeout(() => {
+                goToStep(4);
+            }, 1700);
+        }
+
+        // ==========================================
+        // 5. SLIDER SASUKE (3 FOTO)
+        // ==========================================
+        function updateSasukeSlide() {
+            const slide = sasukeSlides[currentSasukeIdx];
+            const imgEl = document.getElementById('sasuke-img');
+            setSmartImage(imgEl, slide.base);
+            document.getElementById('sasuke-quote').textContent = slide.quote;
+            document.getElementById('sasuke-badge').textContent = `${currentSasukeIdx + 1} / 3`;
+
+            const dots = document.getElementById('sasuke-dots').children;
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].className = i === currentSasukeIdx
+                    ? 'w-2.5 h-2.5 rounded-full bg-sky-500 transition-all'
+                    : 'w-2.5 h-2.5 rounded-full bg-slate-300 transition-all';
+            }
+        }
+
+        function nextSasuke() {
+            currentSasukeIdx = (currentSasukeIdx + 1) % sasukeSlides.length;
+            updateSasukeSlide();
+        }
+
+        function prevSasuke() {
+            currentSasukeIdx = (currentSasukeIdx - 1 + sasukeSlides.length) % sasukeSlides.length;
+            updateSasukeSlide();
+        }
+
+        // ==========================================
+        // 6. SLIDER FOTO RAISHA (2 SLIDE PUITIS)
+        // ==========================================
+        function setRaishaSlide(idx) {
+            const slide = raishaSlides[idx];
+            const imgEl = document.getElementById('raisha-img');
+            setSmartImage(imgEl, slide.base);
+            document.getElementById('raisha-poem').textContent = slide.poem;
+            document.getElementById('raisha-badge').textContent = `Slide ${idx + 1} / 2`;
+
+            const btn0 = document.getElementById('r-btn-0');
+            const btn1 = document.getElementById('r-btn-1');
+            if (idx === 0) {
+                btn0.className = 'px-4 py-1.5 rounded-full bg-pink-400 text-white text-xs font-bold shadow-sm transition';
+                btn1.className = 'px-4 py-1.5 rounded-full bg-white text-pink-500 border border-pink-200 text-xs font-bold transition';
+            } else {
+                btn1.className = 'px-4 py-1.5 rounded-full bg-pink-400 text-white text-xs font-bold shadow-sm transition';
+                btn0.className = 'px-4 py-1.5 rounded-full bg-white text-pink-500 border border-pink-200 text-xs font-bold transition';
+            }
+        }
+
+        // ==========================================
+        // 7. FINALE - BALON BANYAK & LOPYU LAH
+        // ==========================================
+        function finishCelebration() {
+            goToStep(7);
+            spawnManyBalloons(30);
+            triggerConfetti();
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 85,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#FF8DA1', '#7EB6D9', '#FFD1DC', '#BDE0FE', '#FBBF24']
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+```
